@@ -8,7 +8,9 @@ DeepSeek Harness（DSH）的开场动画插件。安装后，打开 Harness Web 
 
 ## 安装
 
-在 Harness 的「插件」页选择「安装本地 / 从 URL」，指向本目录。也可用 CLI（需先安装 DSH）：
+仓库地址：<https://github.com/Tianshang301/dsh-intro-animation>
+
+在 Harness 的「插件」页选择「安装本地 / 从 URL」，指向本目录或上述仓库 URL。也可用 CLI（需先安装 DSH）：
 
 ```bash
 dsh plugin --profile web add /绝对路径/dsh-intro-animation
