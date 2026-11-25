@@ -1,0 +1,4 @@
+node_modules/
+intro.config.json
+.DS_Store
+*.log

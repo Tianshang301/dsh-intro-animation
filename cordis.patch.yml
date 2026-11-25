@@ -1,0 +1,6 @@
+# 开场动画插件：向组合树插入本包的一行，host 半注册静态资源路由，
+# client 半由 dsh.client 名册自动加载并在启动时播放全屏动画。
+- insert:
+    - id: intro-animation
+      name: 'dsh-intro-animation'
+      config: {}

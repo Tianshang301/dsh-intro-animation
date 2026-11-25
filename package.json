@@ -1,0 +1,45 @@
+{
+  "name": "dsh-intro-animation",
+  "version": "1.0.0",
+  "description": "DeepSeek Harness 开场动画插件：启动时全屏播放线稿勾勒、发光、上色、凤凰烟花与 AGI 文案的开场动画。支持跳过、按浏览器会话仅播放一次。",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "assets/intro.html",
+    "README.md",
+    "scripts/selfcheck.mjs"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": []
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "cordis",
+    "intro",
+    "opening-animation"
+  ]
+}
