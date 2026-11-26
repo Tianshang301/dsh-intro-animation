@@ -24,6 +24,10 @@ const DEFAULT_CONFIG = {
 const INTRO_HTML = new URL('./assets/intro.html', import.meta.url)
 const USER_CONFIG = new URL('./intro.config.json', import.meta.url)
 
+// 动画资源约 6MB 且只读，首次读取后常驻内存，避免每次请求都走磁盘。
+// 仍保持 cache-control: no-store，确保插件更新后浏览器不会命中旧副本。
+let assetCache = null
+
 async function loadConfig() {
   let user = {}
   try {
@@ -56,8 +60,8 @@ async function handler(request, response) {
 
   if (pathname === '/dsh-intro/asset/intro.html') {
     try {
-      const html = await readFile(INTRO_HTML)
-      return send(response, 200, html, 'text/html; charset=utf-8')
+      if (!assetCache) assetCache = await readFile(INTRO_HTML)
+      return send(response, 200, assetCache, 'text/html; charset=utf-8')
     } catch (error) {
       return send(response, 500, 'intro animation asset is missing', 'text/plain; charset=utf-8')
     }

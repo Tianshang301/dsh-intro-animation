@@ -70,6 +70,18 @@ check('animation has AGI copy', html.includes('Exploring the essence of AGI'))
 check('animation has ending marker', html.includes('class="ending"'))
 check('animation has line-reveal mask', html.includes('id="lineReveal"') && html.includes('mask="url(#lineReveal)"'))
 check('animation colors shapes per block', (html.match(/class="bs"/g) || []).length >= 10 || html.includes("classList.add('bs')"))
+check('color layer isolated in own SVG', html.includes('id="colorSvg"') && html.indexOf('id="colorSvg"') < html.indexOf('id="colorLayer"'))
+check('color layer dims with art layer', html.includes('#artSvg.finalDim,#colorSvg.finalDim') && html.includes("$('colorSvg').classList.add('finalDim')"))
+check('coloring uses band-uniform schedule', html.includes("bands=[['base',0,.09]") && html.includes("band='base'"))
+
+// 流畅性相关行为（离线可校验的静态特征）
+check('animation respects reduced motion', html.includes('prefers-reduced-motion'))
+check('animation pauses when hidden', html.includes('visibilitychange'))
+check('animation cancels idle rAF', html.includes('cancelAnimationFrame'))
+check('animation notifies parent on end', html.includes('dsh-intro-ended'))
+check('client listens for end message', client.includes("addEventListener('message'"))
+check('client keeps low-freq fallback poll', client.includes('}, 500)'))
+check('host caches asset buffer', host.includes('assetCache'))
 
 console.log(results.join('\n'))
 console.log(`\n${failed === 0 ? 'OK: 插件结构与契约自检全部通过。' : `FAILED: ${failed} 项未通过。`}`)

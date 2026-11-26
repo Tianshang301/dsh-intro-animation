@@ -32,6 +32,7 @@
       let pollTimer = null
       let closeTimer = null
       let fallbackTimer = null
+      let messageHandler = null
       let closing = false
 
       function readSessionFlag() {
@@ -62,6 +63,10 @@
         if (closeTimer) clearTimeout(closeTimer)
         if (fallbackTimer) clearTimeout(fallbackTimer)
         pollTimer = closeTimer = fallbackTimer = null
+        if (messageHandler) {
+          try { window.removeEventListener('message', messageHandler) } catch (error) { /* 忽略 */ }
+          messageHandler = null
+        }
         if (skipButton && skipButton.parentNode) skipButton.parentNode.removeChild(skipButton)
         if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay)
         skipButton = overlay = iframe = null
@@ -76,6 +81,7 @@
         pollTimer = fallbackTimer = null
         const fadeMs = 900
         // 触发 CSS 过渡：先降到 0，过渡结束后再移除节点
+        overlay.style.willChange = 'opacity'
         overlay.style.opacity = '0'
         if (skipButton) skipButton.style.opacity = '0'
         closeTimer = setTimeout(() => {
@@ -84,6 +90,18 @@
       }
 
       function watchEnding() {
+        // 优先用动画主动发来的结束消息，避免高频轮询 iframe DOM
+        messageHandler = (event) => {
+          if (!iframe || event.source !== iframe.contentWindow) return
+          const data = event.data
+          if (data && data.type === 'dsh-intro-ended') fadeOut(1700)
+        }
+        try {
+          window.addEventListener('message', messageHandler)
+        } catch (error) {
+          // 环境不支持 message 事件时仅依赖轮询与超时兜底
+        }
+        // 低频轮询作为兜底：消息丢失或跨源不可读时仍能按时收尾
         pollTimer = setInterval(() => {
           try {
             const doc = iframe && iframe.contentDocument
@@ -94,7 +112,7 @@
           } catch (error) {
             // iframe 尚未就绪或跨源限制，沿用超时兜底
           }
-        }, 220)
+        }, 500)
       }
 
       function buildOverlay() {
@@ -138,11 +156,10 @@
           font: '400 12px Inter, -apple-system, "Segoe UI", sans-serif',
           letterSpacing: '0.08em',
           color: 'rgba(255,255,255,.82)',
-          background: 'rgba(10,14,28,.55)',
+          background: 'rgba(10,14,28,.72)',
           border: '1px solid rgba(180,210,255,.28)',
           borderRadius: '20px',
           cursor: 'pointer',
-          backdropFilter: 'blur(6px)',
         })
         skipButton.style.transition = 'opacity 600ms ease'
         skipButton.addEventListener('click', () => fadeOut(120))
