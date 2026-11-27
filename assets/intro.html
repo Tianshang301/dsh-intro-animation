@@ -12323,36 +12323,49 @@ body{display:flex;align-items:center;justify-content:center}
   var BASE={0:1,1:1,2:1,3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1,11:1,12:1,13:1,14:1,15:1,16:1,17:1,18:1,19:1,20:1,21:1,22:1,23:1,24:1,25:1,26:1,27:1,28:1,29:1,30:1,31:1,32:1,33:1,34:1,35:1,36:1,39:1,40:1,42:1,43:1,44:1,47:1,48:1,49:1,50:1,51:1,53:1,55:1,63:1,65:1,71:1,75:1,90:1,164:1,245:1,330:1};
   var shapes=[],shp=0;
   (function(){
-    var nodes=$('colorLayer').getElementsByTagName('path'),list=[],nb=0,k;
+    var nodes=$('colorLayer').getElementsByTagName('path'),list=[],nb=0;
     for(var i=0;i<nodes.length;i++)if(BASE[i])nb++;
     var seen=0;
     for(var i=0;i<nodes.length;i++){
       var el=nodes[i],t=el.getAttribute('transform')||'';
       var m=/translate\(\s*(-?[\d.]+)[ ,]+(-?[\d.]+)/.exec(t);
       var x=m?+m[1]:1024, y=m?+m[2]:576;
-      var band;
-      if(BASE[i]){el.classList.add('bs');k=.09*(nb>1?seen/(nb-1):0);seen++;band='base';}
-      else if(x>=405&&x<=1190){k=.09+.51*(y/1152);band='subject';}   // 主体
-      else {k=.60+.40*(y/1152);band='environment';}                  // 环境
-      list.push({el:el,k:k,band:band});
+      var band,ord;
+      if(BASE[i]){el.classList.add('bs');band='base';ord=nb>1?seen/(nb-1):0;seen++;}
+      else if(x>=405&&x<=1190){band='subject';ord=y/1152;}   // 主体
+      else{band='environment';ord=y/1152;}                   // 环境
+      // 同一 y 行原来按文档顺序(与 x 无关)出场, 表现为散点闪烁; 加 ±70px 纵向
+      // 抖动后, 每一瞬间新出现的色块在空间上连成一条窄带, 读起来是连续下扫。
+      list.push({el:el,band:band,x:x,key:band==='base'?ord:ord+(Math.random()-.5)*(140/1152)});
     }
-    list.sort(function(a,b){return a.k-b.k});
-    var kmax=list.length?list[list.length-1].k:1,START=4980,DUR=2500;
-    // 保持每个 band 的时间窗不变，但把窗内路径按顺序均匀铺开，
-    // 避免同一 y 值的大量路径挤在同一帧，削掉突发帧的抖动峰值。
-    var bands=[['base',0,.09],['subject',.09,.60],['environment',.60,kmax]];
-    for(var bi=0;bi<bands.length;bi++){
-      var name=bands[bi][0],kLo=bands[bi][1],kHi=bands[bi][2];
-      var group=[];
+    list.sort(function(a,b){return (a.key-b.key)||(a.x-b.x)});
+    var cnt={base:0,subject:0,environment:0};
+    for(var i=0;i<list.length;i++)cnt[list[i].band]++;
+    // 时间预算按色块数量分配 -> 每秒填色数量恒定, 不再出现环境带最后 1s 涌入
+    // 上万块、和烟花粒子抢主线程造成的掉帧。
+    var START=4780,BASE_MS=360,TAIL_MS=3260,baseEnd=START+BASE_MS;
+    var flow=Math.max(1,list.length-cnt.base);
+    var tCursor=baseEnd,span={subject:0,environment:0};
+    span.subject=TAIL_MS*cnt.subject/flow;
+    span.environment=TAIL_MS*cnt.environment/flow;
+    var order=['base','subject','environment'];   // 仍保持 底色→主体→环境
+    for(var bi=0;bi<order.length;bi++){
+      var name=order[bi],group=[];
       for(var j=0;j<list.length;j++)if(list[j].band===name)group.push(list[j]);
-      var tA=START+DUR*(kLo/kmax),tB=START+DUR*(kHi/kmax);
+      var tA,tB;
+      if(name==='base'){tA=START;tB=baseEnd;}
+      else{tA=tCursor;tB=tCursor+=span[name];}
+      var denom=group.length>1?group.length-1:1;
       for(var g=0;g<group.length;g++){
-        group[g].t=tA+(tB-tA)*(group.length>1?g/(group.length-1):0);
+        group[g].t=tA+(tB-tA)*(group.length>1?g/denom:0);
         shapes.push(group[g]);
       }
     }
   })();
   function paintShapes(ms){
+    // 调度已按色块数量均分时间窗, 每个 16.7ms 帧只会推进约 62 块(旧版环境带
+    // 峰值 113 块/帧), 因此这里不再额外限量 —— 限量会在慢机器上越拖越落后,
+    // 反而让上色拖到文案出现之后。
     while(shp<shapes.length&&shapes[shp].t<=ms){shapes[shp].el.style.opacity=1;shp++;}
   }
   function updateStrokes(ms){

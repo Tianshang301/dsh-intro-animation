@@ -72,7 +72,12 @@ check('animation has line-reveal mask', html.includes('id="lineReveal"') && html
 check('animation colors shapes per block', (html.match(/class="bs"/g) || []).length >= 10 || html.includes("classList.add('bs')"))
 check('color layer isolated in own SVG', html.includes('id="colorSvg"') && html.indexOf('id="colorSvg"') < html.indexOf('id="colorLayer"'))
 check('color layer dims with art layer', html.includes('#artSvg.finalDim,#colorSvg.finalDim') && html.includes("$('colorSvg').classList.add('finalDim')"))
-check('coloring uses band-uniform schedule', html.includes("bands=[['base',0,.09]") && html.includes("band='base'"))
+// 上色调度：时间预算按每个 band 的色块数量分配（每秒填色量恒定），
+// 并对同一 y 行内的出场顺序加纵向抖动，避免散点闪烁。
+check('coloring budget weighted by block count', html.includes('cnt.subject') && html.includes('cnt.environment') && html.includes('TAIL_MS*cnt.subject/flow'))
+check('coloring order jittered per row', html.includes('Math.random()-.5') && html.includes('a.key-b.key'))
+check('coloring spread over longer window', html.includes('START=4780') && html.includes('TAIL_MS=3260'))
+check('coloring paints without per-frame cap', html.includes('function paintShapes(ms){') && !html.includes('PAINT_BUDGET') && !html.includes('PAINT_RATE'))
 
 // 流畅性相关行为（离线可校验的静态特征）
 check('animation respects reduced motion', html.includes('prefers-reduced-motion'))
